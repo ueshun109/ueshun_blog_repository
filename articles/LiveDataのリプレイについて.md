@@ -1,3 +1,7 @@
+*****
+{"img": "../static/logo.png" ,"tag": "Android", "date": "2020-06-30"}
+*****
+
 # LiveDataをObserveする際の注意点
 
 みんなLiveDataって使ってますよね！LiveData便利ですよね！
