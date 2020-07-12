@@ -17,7 +17,7 @@
 
 まずViewModelにLiveDataに値を流すための処理を書きます。
 
-``` ViewModel
+```Kotlin
 class FirstViewModel: ViewModel() {
     // 外から値を流せないようにするために、mutableLiveDataはアクセス修飾子をprivateにしている。
     private val mutableLiveData = MutableLiveData<String>)()
@@ -31,7 +31,7 @@ class FirstViewModel: ViewModel() {
 
 次にFragmentでViewModelから流れてきた値を受け取るための処理を書きます。
 
-``` Fragment
+```Kotlin
 class FirstFragment : Fragment() {
 
     private val viewModel: FirstViewModel by lazy {
@@ -114,7 +114,7 @@ FirstFragmentに戻ってきた際、LIVEボタンをタップしていないに
 
 今回はFragment側で状態を持つようにしておきます。
 
-```
+```Kotlin
 class FirstFragment: Fragment() {
     private var hasBeenHandled = fasle
 
@@ -135,7 +135,7 @@ class FirstFragment: Fragment() {
 
 もしくは、
 
-```
+```Kotlin
 class FirstFragment: Fragment() {
     private var hasBeenHandled = fasle
 
@@ -161,7 +161,7 @@ class FirstFragment: Fragment() {
 ## 解決方法2~イベントを流したあと、nullを流しておく~
 LiveDataの型を`String`から`String?`のnullableに変更し、値を流した直後にnullを流す、という方法もあるかと思います。
 
-``` ViewModel
+```Kotlin
 class FirstViewModel: ViewModel() {
     // 外から値を流せないようにするために、mutableLiveDataはアクセス修飾子をprivateにしている。
     private val mutableLiveData = MutableLiveData<String?>)()
@@ -174,7 +174,7 @@ class FirstViewModel: ViewModel() {
 }
 ```
 
-``` fragment
+```Kotlin
 class FirstFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -199,7 +199,7 @@ class FirstFragment: Fragment() {
 
 以下のような。イベントを流したときに１度だけobserveするクラスを作ります。
 
-```
+```Kotlin
 class SingleLiveEvent<T>: MutableLiveData<T>() {
 
     private val tag = "SingleLiveEvent"
@@ -230,7 +230,7 @@ class SingleLiveEvent<T>: MutableLiveData<T>() {
 }
 ```
 
-```viewModel
+```Kotlin
 class FirstViewModel : ViewModel() {
 
     private val mutableLiveData = SingleLiveEvent<String>()
@@ -242,7 +242,7 @@ class FirstViewModel : ViewModel() {
 }
 ```
 
-```fragment
+```Kotlin
 viewModel.liveData.observe(viewLifecycleOwner, Observer {
     Snackbar.make(view, it, Snackbar.LENGTH_LONG).show()
 })
@@ -256,7 +256,7 @@ viewModel.liveData.observe(viewLifecycleOwner, Observer {
 
 最後に以下のような流したいイベントをラップするクラスを使用することです。
 
-```
+```Kotlin
 class Event<out T>(private val content: T) {
     var hasBeenHandled = false
         private set
@@ -275,7 +275,7 @@ class Event<out T>(private val content: T) {
 }
 ```
 
-``` viewModel
+```Kotlin
 class FirstViewModel : ViewModel() {
 
     private val mutableLiveData = MutableLiveData<Event<String>>()
@@ -287,7 +287,7 @@ class FirstViewModel : ViewModel() {
 }
 ```
 
-``` fragment
+```Kotlin
 viewModel.liveData.observe(viewLifecycleOwner, Observer { event ->
     event.contentIfNotHandled?.let {
         Snackbar.make(view, it, Snackbar.LENGTH_LONG).show()
