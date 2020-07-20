@@ -1,5 +1,5 @@
 *****
-{"path": "LiveDataのリプレイについて.md", "img": "../static/logo.png" ,"tag": "Android", "date": "2020-06-30"}
+{"path": "1/LiveDataのリプレイについて.md", "img": "../static/logo.png" ,"tag": "Android", "date": "2020-06-30"}
 *****
 
 # LiveDataをObserveする際の注意点
