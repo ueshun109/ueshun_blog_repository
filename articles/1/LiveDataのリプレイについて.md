@@ -12,8 +12,6 @@
 LiveDataの`observe`メソッドを呼び出した際、LiveDataにイベントが保持されていればイベントを処理してしまう
 
 ## LiveDataの頻出パターン
-まずはLiveDataを使う上での頻出パターンを紹介します。
-
 以下のような仕様がある前提で本稿を進めていきます。
 
 ```
@@ -101,12 +99,12 @@ private val mutableLiveData = MutableLiveData<String>)("Not yet tapped button!!"
 
 ![livedata_excample3.gif](https://raw.githubusercontent.com/yogita109/ueshun_blog_repository/master/articles/1/livedata_excample3.gif)
 
-FirstFragmentに戻ってきた際、LIVEボタンをタップしていないにも関わらずまたスナックバーが表示されてしまっています。
+FirstFragmentに戻ってきた際、こちらもLIVEボタンをタップしていないにも関わらずまたスナックバーが表示されてしまっています。
 これも仕様とは異なる動作です。。
 
 ## 解決方法
 どうやら`observe`した際、LiveDataにイベントが保持されていればそのイベントを即座に処理してしまうようです。
-上記の様な挙動は想定仕様のようで、設計上の問題として対処しなければいけないようです。
+上記の様な挙動は想定仕様(バグではない)のようで、設計上の問題として対処しなければいけないようです。
 
 以降は前述した問題を解決するためのいくつかの方法について見ていくことにします。
 
@@ -117,7 +115,7 @@ FirstFragmentに戻ってきた際、LIVEボタンをタップしていないに
 
 ```Kotlin
 class FirstFragment: Fragment() {
-    private var hasBeenHandled = fasle
+    private var hasBeenHandled = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -138,7 +136,7 @@ class FirstFragment: Fragment() {
 
 ```Kotlin
 class FirstFragment: Fragment() {
-    private var hasBeenHandled = fasle
+    private var hasBeenHandled = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -157,7 +155,7 @@ class FirstFragment: Fragment() {
 ただこのフラグで状態をもつ方法には、
 
 * フラグを管理するコストがかかってしまったり、うっかりフラグの状態を書きかえてしまう可能性がある。
-* 一度処理されたあとは永遠にtrueになったフラグを持ち続けなければならない
+* 一度処理されたあとは永遠にtrueになったフラグを持ち続けなければならない。
 
 というようなデメリットがあると思います。
 
