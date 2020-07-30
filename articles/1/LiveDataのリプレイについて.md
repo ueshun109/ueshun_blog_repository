@@ -75,7 +75,7 @@ class FirstFragment : Fragment() {
 
 念の為LiveDataで流れてきた値が受け取れるか確認しておきます。
 
-![liveData_example1.gif](./liveData_example1.gif)
+![liveData_example1.gif](https://raw.githubusercontent.com/yogita109/ueshun_blog_repository/master/articles/1/liveData_example1.gif)
 
 SnackBarが表示されたので、きちんとLiveDataの値を受け取れていることが確認できますね。
 
@@ -89,7 +89,7 @@ private val mutableLiveData = MutableLiveData<String>)("Not yet tapped button!!"
 
 これで再度アプリを起動してみます。
 
-![livedata_excample2.gif](./livedata_excample2.gif)
+![livedata_excample2.gif](https://raw.githubusercontent.com/yogita109/ueshun_blog_repository/master/articles/1/livedata_excample2.gif)
 
 
 少し分かりづらいですがLIVEボタンをタップしていないにも関わらずスナックバーが表示されてしまっています。
@@ -99,7 +99,7 @@ private val mutableLiveData = MutableLiveData<String>)("Not yet tapped button!!"
 
 では次に、Liveボタンを押したあとにFirstFragmentからSecondFragmentに遷移し、SecondFragmentからFirstFragmentに戻ってみます。
 
-![livedata_excample3.gif](./livedata_excample3.gif)
+![livedata_excample3.gif](https://raw.githubusercontent.com/yogita109/ueshun_blog_repository/master/articles/1/livedata_excample3.gif)
 
 FirstFragmentに戻ってきた際、LIVEボタンをタップしていないにも関わらずまたスナックバーが表示されてしまっています。
 これも仕様とは異なる動作です。。
