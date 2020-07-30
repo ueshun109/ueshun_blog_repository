@@ -1,5 +1,5 @@
 *****
-{"path": "1/気づいていない！？思わぬLiveDataの落とし穴.md ", "img": "../static/logo.png", "tag": "Android", "date": "2020-06-30"}
+{"path": "1/気づいていない！？思わぬLiveDataの落とし穴.md", "img": "../static/logo.png", "tag": "Android", "date": "2020-06-30"}
 *****
 
 ## 概要 
