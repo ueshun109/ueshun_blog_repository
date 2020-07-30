@@ -2,18 +2,23 @@
 {"path": "1/LiveDataのリプレイについて.md", "img": "../static/logo.png" ,"tag": "Android", "date": "2020-06-30"}
 *****
 
-# LiveDataをObserveする際の注意点
+## 概要 
 
 みんなLiveDataって使ってますよね！LiveData便利ですよね！
 でも意識していないと意図しない動作になってしまうことがあります。
 本稿ではそんな落とし穴になり得る書き方の一つを紹介します。
 
 ## TLDR
-- LiveDataの`observe`メソッドを呼び出した際、LiveDataに値があればそれを返す。
-- LiveDataには、Hot/Coldという性質がある。
+LiveDataの`observe`メソッドを呼び出した際、LiveDataにイベントが保持されていればイベントを処理してしまう
 
 ## LiveDataの頻出パターン
 まずはLiveDataを使う上での頻出パターンを紹介します。
+
+以下のような仕様がある前提で本稿を進めていきます。
+
+```
+LIVEボタンをタップした時にだけスナックバーを表示する。
+```
 
 まずViewModelにLiveDataに値を流すための処理を書きます。
 
@@ -68,14 +73,9 @@ class FirstFragment : Fragment() {
 }
 ```
 
-以下のような仕様がある前提で本稿を進めていきます。
-```
-LIVEボタンをタップした時にだけスナックバーを表示する。
-```
-
 念の為LiveDataで流れてきた値が受け取れるか確認しておきます。
 
-// ここにgifを挿入する
+![liveData_example1.gif](./liveData_example1.gif)
 
 SnackBarが表示されたので、きちんとLiveDataの値を受け取れていることが確認できますね。
 
@@ -89,18 +89,19 @@ private val mutableLiveData = MutableLiveData<String>)("Not yet tapped button!!"
 
 これで再度アプリを起動してみます。
 
-// ここにgifを挿入する
+![livedata_excample2.gif](./livedata_excample2.gif)
+
 
 少し分かりづらいですがLIVEボタンをタップしていないにも関わらずスナックバーが表示されてしまっています。
-これは仕様とは異なる動作です。。ぴえん。。
+これは仕様とは異なる動作です。。
 
 ## LiveDataの落とし穴その2
 
 では次に、Liveボタンを押したあとにFirstFragmentからSecondFragmentに遷移し、SecondFragmentからFirstFragmentに戻ってみます。
 
-// ここにgifを挿入する
+![livedata_excample3.gif](./livedata_excample3.gif)
 
-FirstFragmentに戻ってきた際、LIVEボタンをタップしていないにも関わらずまたｍたスナックバーが表示されてしまっています。
+FirstFragmentに戻ってきた際、LIVEボタンをタップしていないにも関わらずまたスナックバーが表示されてしまっています。
 これも仕様とは異なる動作です。。
 
 ## 解決方法
@@ -154,8 +155,10 @@ class FirstFragment: Fragment() {
 }
 ```
 ただこのフラグで状態をもつ方法には、
-- 管理するコストがかかってしまったり、うっかりフラグの状態を書きかえてしまう可能性がある。
-- 一度処理されたあとは永遠にtrueになったフラグを持ち続けなければならない
+
+* フラグを管理するコストがかかってしまったり、うっかりフラグの状態を書きかえてしまう可能性がある。
+* 一度処理されたあとは永遠にtrueになったフラグを持ち続けなければならない
+
 というようなデメリットがあると思います。
 
 ## 解決方法2~イベントを流したあと、nullを流しておく~
@@ -192,8 +195,11 @@ class FirstFragment: Fragment() {
 ```
 
 この方法では、
-- いちいちnullを流してリセットしなければならない
-- リセットするためだけにLiveDataのジェネリック型をString?にしなければならない。(nullableは値がオプションのときに使用するためだと考えているためです。)
+
+* いちいちnullを流してリセットしなければならない
+* リセットするためだけにLiveDataのジェネリック型をString?にしなければならない。(nullableは値がオプションのときに使用するためだと考えているためです。)
+
+というようなデメリットがあります。
 
 ## 解決方法3~SingleLiveEventを使用する~
 
