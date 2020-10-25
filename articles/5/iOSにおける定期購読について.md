@@ -2,20 +2,8 @@
 {"path": "5/iOSにおける定期購読について.md", "img": "https://raw.githubusercontent.com/yogita109/ueshun_blog_repository/master/articles/5/shopping_shiharai_businesswoman.png", "tag": "iOS", "date": "2020-10-10"}
 *****
 
-## 目次
-- In-App Purchasesの概要
-- 購入処理に必要な主なStoreKitのAPIについて
-    - SKPaymentQueue
-    - SKTransactionObserver
-    - SKPaymentTransaction
-- 実際に購入処理を実装してみる
-- レシートについて
-    - レシートの検証
-    - レシートの管理
-- まとめ
-
 ## In-App Purchasesの概要
-In-App PurchasesとはApp内課金のことであり、アプリ内でプレミアムコンテンツや、デジタル商品、サブスクリプションなどの追加コンテンツは追加機能を、App内で直接ユーザーに提供できます。
+In-App Purchasesとはアプリ内課金のことであり、アプリ内でプレミアムコンテンツや、デジタル商品、サブスクリプションなどの追加コンテンツなどをアプリ内で直接ユーザーに提供できます。
 
 In-App Purchasesには、以下の４種類があります。
 - 消耗型
@@ -25,28 +13,25 @@ In-App Purchasesには、以下の４種類があります。
 
 詳細については[ここ](https://developer.apple.com/jp/in-app-purchase/)を参照してください。
 
-今回は自動更新サブスクリプションの実装方法について見ていきます。
+今回は<b>自動更新サブスクリプション</b>の実装方法について見ていきます。
 (が他の種類の実装を行うにしても、基本的な考え方は同じだと思います。)
 
 ## 購入処理に必要な主なStoreKitのAPIについて
 アプリ内コンテンツの購入処理を実装する際、StoreKitというフレームワークを使用します。
-ここではStoreKitが提供する主なAPIについて説明していきます。
+まずはStoreKitが提供する主なAPIについて説明していきます。
+
+### SKProduct
+ユーザーに提供する「商品」を表すクラスです。インスタンスプロパティの`productIdentifier`や`price`などから商品に関する情報を取得でき、これらの情報はAppStoreConnectで登録された情報を基づいています。
+
+### SKPayment
+商品の購入処理のリクエストを表すクラスです。前述の`SKProduct`のインスタンスを利用して、商品の購入リクエストを生成します。
 
 ### SKPaymentQueue
-`SKPaymentQueue`は、AppStoreと通信しコンテンツの購入処理のためのインターフェースを提供するクラスです。
-`SKPaymentQueue`にエンキューするオブジェクトは、`SKPayment`という購入処理を実行するためのオブジェクトです。
-`SKPayment`をエンキューするたびに、`SKPaymentQueue`は購入するためのトランザクション(`SKPaymentTransaction`)を作成します。
-
-### SKTransactionObserver
-トランザクションの状態を監視するためのAPIを提供するプロトコルです。
-トランザクションが発生すると、`SKPaymentTransactionObserver`から通知されます。
-このObserverはApp内課金の課金の柱です。
-
-<b>★Tips★</b><br>
-他のクラスでグローバルに参照するために、共有インスタンスとして作成することを検討してください。共有インスタンスは、オブジェクトの生存期間も保証し、`SKPaymentTransactionObserver`を介したコールバックが常に同じインスタンスによって処理されるようにします。
+AppStoreと通信し商品の購入処理のためのインターフェースを提供するクラスです。
+`SKPaymentQueue`は名前の通りキューであり、`SKPayment`をエンキューするたびに`SKPaymentQueue`は購入するためのトランザクション(`SKPaymentTransaction`)を作成します。
 
 ### SKPaymentTransaction
-購入するために必要な一連の処理を表すオブジェクトです。
+購入するためのトランザクションの状態を表すクラスです。
 トランザクションの状態は5種類あります。以下はその種類と適当な処理についてです。
 
 |ステータス(SKPaymentTransactionState)|適当な処理|
@@ -57,15 +42,23 @@ In-App Purchasesには、以下の４種類があります。
 |.restored|ユーザーにコンテンツを提供し、`finishTransaction`を呼びます。|
 |.defferd|基本何もしません。|
 
+### SKTransactionObserver
+トランザクションの状態を監視するためのAPIを提供するプロトコルです。
+トランザクションが発生すると、`SKPaymentTransactionObserver`から通知されます。
+このObserverはApp内課金の課金の柱です。
+
+<b>★Tips★</b><br>
+他のクラスでグローバルに参照するために、共有インスタンスとして作成することを検討してください。共有インスタンスは、オブジェクトの生存期間も保証し、`SKPaymentTransactionObserver`を介したコールバックが常に同じインスタンスによって処理されるようにします。
+
 ## 実際に購入処理を実装してみる
 ここで上記で説明したAPIを用いて、実際に購入処理を実装してみます。
 サンプルコードは[github](https://github.com/yogita109/InAppPurchaseSample/tree/main/InAppPurchaseSample)にあげているので、よければ参考にしてください。
 
 ### 1.トランザクションの監視処理を登録する
-App内課金を実装する上で重要なことは、トランザクションの状態に応じて適切な処理を行うことです。ここをしっかりしなければユーザーに不利益をもたらしたり、困惑させたりする原因となってしまいます。なので、まずはトランザクションの状態を監視できるようにします。
+App内課金を実装する上で重要なことは、トランザクションの状態に応じて適切な処理を行うことです。ここをしっかりしなければユーザーに不利益をもたらしたり、困惑させたりする原因となってしまいます。そのため、まずはトランザクションの状態を監視できるようにします。
 
 監視処理の登録タイミングは、AppDelegateの`application(_:didFinishLaunchingWithOptions:)`が望ましいです。
-このタイミングで、`SKPaymentQueue`の` add(_:)`を使用して監視処理を登録します。
+このタイミングで、`SKPaymentQueue`の`add(_:)`を使用して監視処理を登録します。
 
 ```swift
 @UIApplicationMain
@@ -76,7 +69,6 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         SKPaymentQueue.default().add(PurchaseProduct.shared)
     }
     
-    // Called when the application is about to terminate.
     func applicationWillTerminate(_ application: UIApplication) {
         // Remove the observer.
         SKPaymentQueue.default().remove(PurchaseProduct.shared)
@@ -86,10 +78,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 ### 2.課金アイテムをAppStoreから取得する
 購入するためにはどの商品を購入するかを決めなければなりません。
-まず購入可能な商品を取得します。商品は、`SKProduct`というクラスで表現されています。
+まず購入可能な商品を取得します。商品は、`SKProduct`で表現されています。
 
 ```swift
-/// 課金アイテムを取得する責務を持つクラス
+/// 商品情報を取得する責務を持つクラス
 final class DownloadProduct: NSObject {
     // Singleton Instance
     static let shared = DownloadProduct()
@@ -98,70 +90,67 @@ final class DownloadProduct: NSObject {
     
     func callAsFunction() {
         productsRequest = SKProductsRequest(productIdentifiers: Set(productIds))
-		productsRequest?.delegate = self
-        // 課金アイテムを取得を開始する.
-		productsRequest?.start()
+	productsRequest?.delegate = self
+        // 商品情報の取得を開始する.
+	productsRequest?.start()
     }
 }
 
 extension DownloadProduct: SKProductsRequestDelegate {
     // 課金アイテムの取得結果を受け取る.
-	func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
-		guard response.products.isNotEmpty else {
-			print("No Product")
-			return
-		}
-		
-		guard response.invalidProductIdentifiers.isEmpty else {
-			print("Invalid Product")
-			return
-		}
-		print(response.products)
-	}
+    func productsRequest(_ request: SKProductsRequest, didReceive response: SKProductsResponse) {
+    // AppStoreConenctで正しく商品情報を登録できていなかったりするとemptyになる.
+    guard !response.products.isEmpty else {
+        print("No Product")
+        return
+    }
+    // 不正な商品が無いか確認.
+    guard response.invalidProductIdentifiers.isEmpty else {
+        print("Invalid Product")
+        return
+    }
+    print(response.products)
 }
-
 ```
 
-### 3.課金アイテムを購入する
-購入可能なアイテムを取得したら次はそれを購入します。
-`PaymentQueue`にenqueueすると、購入のためのトランザクションが生成されます。<br>
+### 3.商品を購入する
+購入可能な商品を取得したら次はそれを購入します。
+`SKPaymentQueue`にenqueueすると、購入のためのトランザクションが生成されます。<br>
 トランザクションの状態は、`SKPaymentTransactionObserver`で監視でき、状態に応じて適切な処理を行います。
 
 ```swift
 /// 課金アイテムを購入する責務を持つクラス
-final class PurchaseProduct: NSObject {
-	
-	private override init() { }
-	static let shared = PurchaseProduct()
-	
-	weak var delegate: PurchasedResultNotification?
-	
-	func callAsFunction(product: SKProduct) {
-		let payment = SKPayment(product: product)
-		// キューに追加することでトランザクションが生成される.
-		SKPaymentQueue.default().add(payment)
-	}
+final class PurchaseProduct: NSObject {	
+    private override init() { }
+    static let shared = PurchaseProduct()
+    weak var delegate: PurchasedResultNotification?
+    
+    func callAsFunction(product: SKProduct) {
+        let payment = SKPayment(product: product)
+	// キューに追加することで購入のためのトランザクションが生成される.
+	SKPaymentQueue.default().add(payment)
+    }
 }
 
 extension PurchaseProduct: SKPaymentTransactionObserver {
     // トランザクション(購入処理)の状態が通知される.
-	func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
-		transactions.forEach { transaction in
-			switch transaction.transactionState {
-				case .purchased, .restored:
-					print("complete")
-                    // ここでレシートデータの取得&レシート検証を行う.
-                    SKPaymentQueue.default().finishTransaction(transaction)
-				case .failed:
-					print("failed")
-                    SKPaymentQueue.default().finishTransaction(transaction)
-				case .purchasing, .deferred:
-                    print("nothing")
-				@unknown default:
-					break
-			}
-		}
-	}
+    func paymentQueue(_ queue: SKPaymentQueue, updatedTransactions transactions: [SKPaymentTransaction]) {
+        transactions.forEach { transaction in
+            switch transaction.transactionState {
+	    case .purchased, .restored:
+	        print("complete")
+	        // TODO: ここでレシートデータの取得&レシート検証を行う.これについては後述.
+	        SKPaymentQueue.default().finishTransaction(transaction)
+    	    case .failed:
+	        print("failed")
+	        SKPaymentQueue.default().finishTransaction(transaction)
+	    case .purchasing, .deferred:
+	        print("nothing")
+	    @unknown default:
+	        break
+	    }
+        }
+    }
 }
 ```
 
@@ -177,7 +166,7 @@ if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
         let receiptData = try Data(contentsOf: appStoreReceiptURL, options: .alwaysMapped)
         let receiptString = receiptData.base64EncodedString(options: [])
 
-        // この後にレシート検証を行う.
+        // TODO: この後にレシート検証を行う.
     } catch {
         print("Couldn't read receipt data with error: " + error.localizedDescription)
     }
@@ -185,7 +174,7 @@ if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
 ```
 
 ### 5.サーバー上でレシートを検証する
-レシートを取得できたら、次にレシートの有効性を確認するためにレシートの検証を行います。<br>
+レシートを取得できたら、次にレシートの有効性を確認するためにレシートの検証を行います。
 レシートの検証方法には２つあります。
 - デバイス上での検証
     - アプリ内で購読状態を更新する
@@ -205,25 +194,25 @@ if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
 |デバイスの時刻の変更に影響されない(ローカル検証した場合、デバイスの時刻を過去にされると逆らえない。そのため無料お試しなどに悪用される。)|×|○|
 |暗号化処理の不必要性|×|○|
 
-オンライン接続が必要ないアプリケーション(一つの端末内で完結するアプリ)なら、ローカル検証でも問題無そうです。
-(とはいえモダンなアプリはネットワーク接続必須なものが多いので、多くの場合はリモート検証になるかと思います。)
+オンライン接続が必要ないアプリケーション(一つの端末内で完結するアプリ)なら、デバイス上での検証でも問題無そうです。
+(とはいえモダンなアプリはネットワーク接続必須なものが多いので、多くの場合はサーバー上での検証になるかと思います。)
 
 ```swift
 switch transaction.transactionState {
-    case .purchased, .restored:
-        if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
-            FileManager.default.fileExists(atPath: appStoreReceiptURL) {
-                let rawReceiptData = Data(contentsOf: appStoreReceiptURL.path)
-                let recepitData = rawReceiptData.base64EncodedString(options: _)
-
-                // 自身のサーバーにレシート文字列を送信する
-                currentUser.processTransaction(recepitData) { isValid in
-                    if isValid {
-                        // トランザクションを終了させる
-                        queue.finishTransaction(transaction)
-                    }
-                }
+case .purchased, .restored:
+    if let appStoreReceiptURL = Bundle.main.appStoreReceiptURL,
+    FileManager.default.fileExists(atPath: appStoreReceiptURL) {
+        let rawReceiptData = Data(contentsOf: appStoreReceiptURL.path)
+	let recepitData = rawReceiptData.base64EncodedString(options: _)
+	
+	// 自身のサーバーにレシート文字列を送信する
+	server.validate(recepitData) { isValid in
+	    if isValid {
+    	        // トランザクションを終了させる
+	        SKPaymentQueue.default().finishTransaction(transaction)
             }
+        }
+    }
 }
 ```
 
@@ -312,7 +301,7 @@ receipt: {
 
 ## まとめ
 ここまでiOSアプリにおける、自動更新サブスクリプションのIn-App Purchasesの実装方法、レシートの検証と管理方法についてざっくり述べてきました。
-In-App Purchaseを初めて実装する前は難しそうなイメージでしたが、実際にやってみるとそこまで難しくないと感じました。
+In-App Purchaseを初めて実装する前は難しそうなイメージでしたが、実際にやってみるとそこまで難しくないと思います。
 
 ## 参考URL
 - https://developer.apple.com/jp/in-app-purchase/
